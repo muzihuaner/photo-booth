@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Photo Booth</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="camera-body">
+
+      <!-- ===== TOP PLATE ===== -->
+      <div class="top-plate">
+        <div class="brand">
+          <span class="brand-icon">📷</span>
+          <div class="brand-text">
+            QUICK·BOOTH
+            <small>VINTAGE PHOTO STUDIO</small>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span class="model-badge">TYPE-R / 2026</span>
+          <button id="btn-about" class="btn-about" title="关于">ⓘ</button>
+        </div>
+      </div>
+
+      <!-- ===== STEPS ===== -->
+      <div class="steps-indicator">
+        <div class="step active" data-step="1">① 拍摄</div>
+        <div class="step" data-step="2">② 模版</div>
+        <div class="step" data-step="3">③ 导出</div>
+      </div>
+
+      <!-- ===== STEP 1: CAMERA ===== -->
+      <section id="step-camera" class="step-section active">
+
+        <!-- Viewfinder -->
+        <div class="viewfinder">
+          <video id="video" autoplay playsinline muted></video>
+          <div class="corners"></div>
+          <div class="viewfinder-lens"></div>
+          <div id="flash-overlay" class="flash-overlay hidden"></div>
+          <div id="countdown-overlay" class="countdown-overlay hidden">
+            <span id="countdown-number">3</span>
+          </div>
+          <div id="camera-placeholder" class="camera-placeholder">
+            <span>📷</span>
+            <p>启动摄像头</p>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-row">
+          <button id="btn-start-camera" class="btn btn-metal">▶ 启动</button>
+          <button id="btn-capture" class="btn btn-shutter" disabled title="拍照">
+            <span class="shutter-dot"></span>
+          </button>
+          <button id="btn-burst" class="btn btn-metal" disabled>⚡ 连拍</button>
+          <button id="btn-retake" class="btn btn-metal" disabled>↺ 重拍</button>
+          <button id="btn-switch-camera" class="btn btn-metal" disabled>⇄ 翻转</button>
+        </div>
+
+        <!-- Toolbar: timer + filter -->
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <span class="toolbar-label">⏱ 定时</span>
+            <button class="btn btn-option active" data-timer="3">3s</button>
+            <button class="btn btn-option" data-timer="5">5s</button>
+            <button class="btn btn-option" data-timer="10">10s</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">🎨 滤镜</span>
+            <button class="btn btn-option active" data-filter="none">原图</button>
+            <button class="btn btn-option" data-filter="bw">黑白</button>
+            <button class="btn btn-option" data-filter="warm">暖色</button>
+            <button class="btn btn-option" data-filter="cool">冷色</button>
+            <button class="btn btn-option" data-filter="retro">复古</button>
+            <button class="btn btn-option" data-filter="fuji">富士</button>
+          </div>
+        </div>
+
+        <!-- Film Strip -->
+        <div class="film-strip">
+          <div class="film-header">
+            <h3>🎞 胶片条</h3>
+            <span id="photo-count" class="photo-count">0 / 4</span>
+          </div>
+          <div id="photo-slots" class="photo-slots">
+            <div class="photo-slot empty" data-index="0"></div>
+            <div class="photo-slot empty" data-index="1"></div>
+            <div class="photo-slot empty" data-index="2"></div>
+            <div class="photo-slot empty" data-index="3"></div>
+          </div>
+          <div class="film-strip-actions">
+            <span></span>
+            <button id="btn-next-template" class="btn btn-next" disabled>② 选模版 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STEP 2: TEMPLATE ===== -->
+      <section id="step-template" class="step-section">
+        <div class="template-section">
+          <div class="section-label">🎨 选择模版</div>
+          <div id="template-list" class="template-grid"></div>
+        </div>
+
+        <div class="custom-text-row">
+          <span class="toolbar-label">✏️ 个性文字（可选）</span>
+          <input id="input-custom-text" class="custom-text-input" type="text" placeholder="输入你想显示的文字..." maxlength="30">
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-timestamp" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">拍摄时间</span>
+          </label>
+        </div>
+
+        <div class="preview-area">
+          <div class="section-label" style="margin-bottom: 8px;">👁 预览</div>
+          <div class="preview-container">
+            <canvas id="preview-canvas"></canvas>
+          </div>
+          <div class="preview-actions">
+            <button id="btn-back-camera" class="btn btn-metal">← 返回拍摄</button>
+            <button id="btn-next-export" class="btn btn-next" disabled>③ 导出 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STEP 3: EXPORT ===== -->
+      <section id="step-export" class="step-section">
+        <div class="export-view">
+          <div class="section-label">📀 导出成品</div>
+          <div class="export-preview">
+            <canvas id="export-canvas"></canvas>
+          </div>
+          <div class="export-actions">
+            <button id="btn-back-template" class="btn btn-metal">← 返回</button>
+            <button id="btn-print" class="btn btn-brass">🖨 打印</button>
+            <button id="btn-pdf" class="btn btn-next">📄 保存 PDF</button>
+            <button id="btn-download-png" class="btn btn-metal">⬇ PNG</button>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /camera-body -->
+
+    <!-- ===== ABOUT MODAL ===== -->
+    <div id="about-modal" class="modal-overlay hidden">
+      <div class="modal-box">
+        <button id="btn-modal-close" class="modal-close">✕</button>
+        <h2>📷 QUICK·BOOTH</h2>
+        <p class="modal-sub">VINTAGE PHOTO STUDIO · TYPE-R</p>
+
+        <div class="modal-section">
+          <strong>使用说明</strong>
+          <ol>
+            <li>点击「启动」打开摄像头，调整姿势后按快门拍照</li>
+            <li>最多拍摄 4 张，可单独删除不满意的照片</li>
+            <li>切换到「模版」步骤，选择喜欢的布局样式</li>
+            <li>可选添加个性文字和时间戳水印</li>
+            <li>在「导出」步骤打印、保存 PDF 或下载 PNG</li>
+          </ol>
+        </div>
+
+        <div class="modal-section">
+          <strong>功能一览</strong>
+          <ul>
+            <li>📸 闪光灯 + 机械快门音效</li>
+            <li>⏱ 自拍定时器（3s / 5s / 10s）</li>
+            <li>🎨 实时滤镜（黑白 / 暖色 / 冷色 / 复古 / 富士）</li>
+            <li>⚡ 一键连拍</li>
+            <li>🎞 7 套模版（经典四格 / 三格 / 宫格 / 拍立得 / 证件照 / 胶卷 / 明信片）</li>
+            <li>🖨 打印 / 📄 PDF / ⬇ PNG 导出</li>
+          </ul>
+        </div>
+
+        <div class="modal-footer">
+          <a href="https://github.com/muzihuaner/photo-booth" target="_blank" rel="noopener">🌐 GitHub</a>
+          <span class="modal-ver">v1.0 · 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PRINT CONTAINER ===== -->
+    <div id="print-container" class="print-only">
+      <img id="print-image" alt="Photo Booth Print">
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
